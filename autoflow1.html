@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoFlow – No-Code Automation for SMBs</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg-color: #fff;
+            --text-color: #333;
+            --secondary-text-color: #5f6368;
+            --primary-color: #007bff;
+            --primary-hover-color: #0056b3;
+            --border-color: #eee;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --draggable-bg: #e6f2ff;
+            --draggable-border: #b3d9ff;
+            --draggable-text: #0056b3;
+            --canvas-bg: #f8f9fa;
+            --canvas-border: #ced4da;
+            --step-completed-bg: #d4edda;
+            --step-completed-border: #28a745;
+            --step-completed-text: #155724;
+            --step-executing-bg: #ffc107;
+            --step-executing-border: #ff9800;
+            --step-executing-text: #856404;
+            --console-bg: #2d2d2d;
+            --console-text: #0f0;
+            --console-header-text: #007bff;
+        }
+
+        body.dark-theme {
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --secondary-text-color: #a0a0a0;
+            --primary-color: #3a86ff;
+            --primary-hover-color: #0062d1;
+            --border-color: #333;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --draggable-bg: #2a3b5c;
+            --draggable-border: #3a86ff;
+            --draggable-text: #e0e0e0;
+            --canvas-bg: #0f172a;
+            --canvas-border: #4a4a6a;
+            --step-completed-bg: #1e4620;
+            --step-completed-border: #34d399;
+            --step-completed-text: #d1fae5;
+            --step-executing-bg: #78350f;
+            --step-executing-border: #f59e0b;
+            --step-executing-text: #fef3c7;
+            --console-header-text: #3a86ff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 30px;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            width: 100%;
+            max-width: 1000px;
+            position: relative;
+        }
+        #theme-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        h1 {
+            color: var(--primary-color);
+            font-size: 3em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .subtitle {
+            color: var(--secondary-text-color);
+            font-size: 1.2em;
+            max-width: 700px;
+            margin: 0 auto 20px auto;
+            line-height: 1.6;
+        }
+        .main-content {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+            background-color: var(--card-bg-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px var(--shadow-color);
+            padding: 30px;
+            transition: background-color 0.3s;
+        }
+        .sidebar {
+            flex: 1;
+            min-width: 250px;
+            border-right: 1px solid var(--border-color);
+            padding-right: 20px;
+        }
+        .sidebar h2 {
+            color: var(--text-color);
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+        .draggable-block {
+            background-color: var(--draggable-bg);
+            border: 1px solid var(--draggable-border);
+            color: var(--draggable-text);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
+        }
+        .draggable-block:hover {
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+        }
+        .draggable-block.dragging {
+            opacity: 0.7;
+            transform: scale(0.98);
+        }
+
+        .canvas-area {
+            flex: 3;
+            background-color: var(--canvas-bg);
+            border: 2px dashed var(--canvas-border);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .canvas-area.drag-over {
+            border-color: var(--primary-color);
+            background-color: var(--draggable-bg);
+        }
+        .canvas-area p.placeholder {
+            color: #999;
+            text-align: center;
+            margin-top: 150px;
+            font-size: 1.2em;
+        }
+        .workflow-step {
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--step-completed-border);
+            color: var(--step-completed-text);
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            position: relative;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        .workflow-step .remove-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            font-size: 1.2em;
+            cursor: pointer;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+        .workflow-step.executing {
+            background-color: var(--step-executing-bg);
+            border-color: var(--step-executing-border);
+            color: var(--step-executing-text);
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(1.02); opacity: 0.9; }
+        }
+        .workflow-step.completed {
+            background-color: var(--step-completed-bg);
+            border-color: var(--step-completed-border);
+            color: var(--step-completed-text);
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .action-buttons button {
+            background-color: #28a745; /* Green for Run */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        .action-buttons button:hover {
+            background-color: #218838;
+        }
+        .action-buttons button#reset-btn {
+            background-color: #dc3545; /* Red for Reset */
+        }
+        .action-buttons button#reset-btn:hover {
+            background-color: #c82333;
+        }
+
+        #output-console {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: var(--console-bg);
+            color: var(--console-text);
+            border-radius: 8px;
+            text-align: left;
+            min-height: 100px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            display: none; /* Hidden by default */
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        #output-console h3 {
+            color: var(--console-header-text);
+            margin-top: 0;
+            border-bottom: 1px solid var(--console-header-text);
+            padding-bottom: 10px;
+        }
+        #output-console pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .ai-suggestion {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e0f7fa; /* Light cyan */
+            border: 1px solid #80deea;
+            border-radius: 8px;
+            text-align: left;
+            font-style: italic;
+            color: #00796b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+        .ai-suggestion i {
+            color: #00bcd4;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <button id="theme-toggle"><i class="fas fa-sun"></i></button>
+    <h1>✨ AutoFlow – No-Code Automation for SMBs ✨</h1>
+    <p class="subtitle">
+        Automate repetitive business tasks with a powerful, AI-powered drag-and-drop workflow builder.
+        Designed for Indian SMBs, freelancers, and startups to boost efficiency and work with enterprise-level productivity.
+    </p>
+</div>
+
+<div class="main-content">
+    <div class="sidebar">
+        <h2><i class="fas fa-cubes"></i> Available Actions</h2>
+        <div class="draggable-block" draggable="true" id="action-whatsapp-receive" data-action="Receive WhatsApp Message">
+            <i class="fab fa-whatsapp"></i> Receive WhatsApp Message
+        </div>
+        <div class="draggable-block" draggable="true" id="action-excel-update" data-action="Update Excel Record">
+            <i class="fas fa-file-excel"></i> Update Excel Record
+        </div>
+        <div class="draggable-block" draggable="true" id="action-gmail-send" data-action="Send Gmail Reply">
+            <i class="fas fa-envelope"></i> Send Gmail Reply
+        </div>
+        <div class="draggable-block" draggable="true" id="action-crm-add" data-action="Add CRM Lead">
+            <i class="fas fa-user-plus"></i> Add CRM Lead
+        </div>
+        <div class="draggable-block" draggable="true" id="action-gst-bill" data-action="Generate GST Bill">
+            <i class="fas fa-receipt"></i> Generate GST Bill
+        </div>
+        <div class="draggable-block" draggable="true" id="action-upi-pay" data-action="Process UPI Payment">
+            <i class="fas fa-rupee-sign"></i> Process UPI Payment
+        </div>
+        <div class="draggable-block" draggable="true" id="action-reminder" data-action="Set Reminder">
+            <i class="fas fa-bell"></i> Set Reminder
+        </div>
+        <div class="draggable-block" draggable="true" id="action-ai-reply" data-action="AI Generate Reply">
+            <i class="fas fa-robot"></i> AI Generate Reply
+        </div>
+    </div>
+
+    <div class="canvas-area" id="workflow-canvas">
+        <p class="placeholder">Drag and drop actions here to build your workflow...</p>
+    </div>
+</div>
+
+<div class="action-buttons">
+    <button id="run-btn"><i class="fas fa-play"></i> Run Workflow</button>
+    <button id="reset-btn"><i class="fas fa-redo"></i> Reset Workflow</button>
+</div>
+
+<div id="output-console">
+    <h3><i class="fas fa-terminal"></i> Workflow Execution Log</h3>
+    <pre id="console-output"></pre>
+    <div class="ai-suggestion" id="ai-suggestion-box">
+        <i class="fas fa-lightbulb"></i> <span id="ai-suggestion-text"></span>
+    </div>
+</div>
+
+<script type="module">
+    // IMPORTANT: API keys in frontend are INSECURE for production.
+    // For a real app, use a secure backend proxy to call Gemini.
+    const API_KEY = "YOUR_API_KEY_HERE"; // The key has been removed.
+
+    // Initialize Gemini API (mocked for frontend demo, actual call needs backend)
+    // In a real scenario, this would be a fetch() call to your own backend
+    // which then calls the Gemini API securely.
+    async function callGeminiAPI(prompt) {
+        // This is a MOCK implementation for the frontend.
+        // It simulates a response without actually calling the Gemini API from the browser.
+        // If you were to enable actual API calls from the browser (NOT RECOMMENDED FOR PRODUCTION):
+        // 1. You'd need to set up CORS on your Gemini API key (limited scenarios).
+        // 2. The key would be exposed, which is a security risk.
+        // For this demo, we'll just simulate an AI response.
+
+        return new Promise(resolve => {
+            setTimeout(() => {
+                let response = "";
+                if (prompt.includes("Generate a professional email reply")) {
+                    response = "AI-generated email: 'Dear Customer, Thank you for your inquiry. We are processing your request and will get back to you within 24 hours. Best regards, AutoFlow Team.'";
+                } else if (prompt.includes("suggest the next logical step")) {
+                    response = "AI Suggestion: 'After updating the Excel record, you might want to `Send Confirmation SMS` or `Create Follow-up Task` in CRM.'";
+                } else if (prompt.includes("Analyze data for next step")) {
+                    response = "AI Analysis: 'Data shows high priority, recommend `Add CRM Lead` and `Set Urgent Reminder`.'";
+                } else {
+                    response = "AI Response based on your input: 'This is a simulated AI output based on your autoflow action.'";
+                }
+                resolve(response);
+            }, 1500); // Simulate API call delay
+        });
+    }
+
+    const workflowCanvas = document.getElementById('workflow-canvas');
+    const draggableBlocks = document.querySelectorAll('.draggable-block');
+    const runButton = document.getElementById('run-btn');
+    const resetButton = document.getElementById('reset-btn');
+    const outputConsole = document.getElementById('output-console');
+    const consoleOutput = document.getElementById('console-output');
+    const aiSuggestionBox = document.getElementById('ai-suggestion-box');
+    const aiSuggestionText = document.getElementById('ai-suggestion-text');
+    const themeToggleButton = document.getElementById('theme-toggle');
+
+    let draggedBlock = null;
+
+    // --- Theme Switcher Logic ---
+    themeToggleButton.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        const isDarkMode = document.body.classList.contains('dark-theme');
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        updateThemeIcon(isDarkMode);
+    });
+
+    function applyInitialTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+        updateThemeIcon(savedTheme === 'dark');
+    }
+
+    function updateThemeIcon(isDarkMode) {
+        themeToggleButton.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    }
+
+    // --- Drag and Drop Logic ---
+    draggableBlocks.forEach(block => {
+        block.addEventListener('dragstart', (e) => {
+            draggedBlock = block;
+            e.dataTransfer.setData('text/plain', block.dataset.action);
+            block.classList.add('dragging');
+        });
+        block.addEventListener('dragend', () => {
+            draggedBlock.classList.remove('dragging');
+            draggedBlock = null;
+        });
+    });
+
+    workflowCanvas.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Allow drop
+        workflowCanvas.classList.add('drag-over');
+    });
+
+    workflowCanvas.addEventListener('dragleave', () => {
+        workflowCanvas.classList.remove('drag-over');
+    });
+
+    workflowCanvas.addEventListener('drop', (e) => {
+        e.preventDefault();
+        workflowCanvas.classList.remove('drag-over');
+
+        if (draggedBlock) {
+            const actionText = draggedBlock.dataset.action;
+            addWorkflowStep(actionText);
+        }
+    });
+
+    function addWorkflowStep(actionText) {
+        const placeholder = workflowCanvas.querySelector('.placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+
+        const stepDiv = document.createElement('div');
+        stepDiv.classList.add('workflow-step');
+        stepDiv.setAttribute('data-action', actionText);
+        stepDiv.innerHTML = `<i class="${getIconClass(actionText)}"></i> <span>${actionText}</span> <button class="remove-btn"><i class="fas fa-times"></i></button>`;
+        
+        workflowCanvas.appendChild(stepDiv);
+
+        stepDiv.querySelector('.remove-btn').addEventListener('click', () => {
+            stepDiv.remove();
+            if (workflowCanvas.children.length === 0) {
+                workflowCanvas.innerHTML = '<p class="placeholder">Drag and drop actions here to build your workflow...</p>';
+            }
+        });
+    }
+
+    function getIconClass(action) {
+        if (action.includes('WhatsApp')) return 'fab fa-whatsapp';
+        if (action.includes('Excel')) return 'fas fa-file-excel';
+        if (action.includes('Gmail')) return 'fas fa-envelope';
+        if (action.includes('CRM')) return 'fas fa-user-plus';
+        if (action.includes('GST')) return 'fas fa-receipt';
+        if (action.includes('UPI')) return 'fas fa-rupee-sign';
+        if (action.includes('Reminder')) return 'fas fa-bell';
+        if (action.includes('AI Generate Reply')) return 'fas fa-robot';
+        return 'fas fa-cogs'; // Default icon
+    }
+
+    // --- Workflow Execution Logic ---
+    runButton.addEventListener('click', async () => {
+        const workflowSteps = Array.from(workflowCanvas.querySelectorAll('.workflow-step'));
+        if (workflowSteps.length === 0) {
+            alert('Please add some steps to the workflow first!');
+            return;
+        }
+
+        runButton.disabled = true;
+        resetButton.disabled = true;
+        outputConsole.style.display = 'block';
+        consoleOutput.textContent = ''; // Clear previous log
+        aiSuggestionBox.style.display = 'none';
+
+        logToConsole("--- Starting AutoFlow Workflow ---");
+
+        for (let i = 0; i < workflowSteps.length; i++) {
+            const step = workflowSteps[i];
+            const action = step.dataset.action;
+
+            step.classList.add('executing');
+            logToConsole(`Executing: "${action}"...`);
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate task duration
+
+            if (action === "AI Generate Reply") {
+                const prompt = "Generate a professional email reply acknowledging receipt and promising follow-up within 24 hours.";
+                const aiResponse = await callGeminiAPI(prompt);
+                logToConsole(`AI Output for "${action}":\n${aiResponse}`);
+            } else {
+                 logToConsole(`Task "${action}" completed.`);
+            }
+            
+            step.classList.remove('executing');
+            step.classList.add('completed');
+        }
+
+        logToConsole("--- Workflow Completed! ---");
+
+        // Simulate AI Workflow Suggestion
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const currentWorkflow = workflowSteps.map(step => step.dataset.action).join(" -> ");
+        const suggestionPrompt = `Given the workflow: "${currentWorkflow}", suggest the next logical step an SMB user might want to add. Focus on Indian SMB contexts.`;
+        const aiSuggestion = await callGeminiAPI(suggestionPrompt);
+        aiSuggestionText.textContent = aiSuggestion.replace("AI Suggestion: ", "");
+        aiSuggestionBox.style.display = 'flex';
+
+
+        runButton.disabled = false;
+        resetButton.disabled = false;
+    });
+
+    resetButton.addEventListener('click', () => {
+        workflowCanvas.innerHTML = '<p class="placeholder">Drag and drop actions here to build your workflow...</p>';
+        outputConsole.style.display = 'none';
+        consoleOutput.textContent = '';
+        aiSuggestionBox.style.display = 'none';
+        runButton.disabled = false;
+        resetButton.disabled = false;
+    });
+
+    function logToConsole(message) {
+        consoleOutput.textContent += `\n[${new Date().toLocaleTimeString()}] ${message}`;
+        outputConsole.scrollTop = outputConsole.scrollHeight; // Auto-scroll to bottom
+    }
+
+    // Initial AI suggestion on load
+    aiSuggestionText.textContent = "Drag some actions to the canvas to start building your first AutoFlow!";
+    aiSuggestionBox.style.display = 'flex';
+
+    // Apply the initial theme when the script loads
+    applyInitialTheme();
+</script>
+
+</body>
+</html>
+
